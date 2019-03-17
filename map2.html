@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Interactive Climate Change Projections</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0" />
+    <style type="text/css">
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+
+      #map-container {
+        width:100%;
+        height: 80%;
+      }
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #slidecontainer {
+        width: 50%;
+      }
+      .slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 25px;
+        border-radius: 5px;
+        margin-left: 30px;
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+      }
+      .slider:hover {
+        opacity: 1;
+      }
+      .slider::-webkit-slider-thumb {
+        -webkit-apearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        background: #4CAF50;
+        cursor: pointer;
+      }
+      .slider::-moz-range-thumb{
+        width: 25px;
+        height: 25px;
+        cursor: pointer; 
+        border-radius: 5px;
+      }
+      #slider-output {
+        position: relative;
+        background-image: linear-gradient(top, #444444, #999999);
+        width: 40px;
+        height: 30px;
+        text-align: right;
+        color: black;
+        font-weight: bold;
+        border-radius: 10px;
+        display: inline-block;
+        font: bold 18px Georgia;
+        display: inline-block;
+        top: -80px;
+      }
+      #slider-output:after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-top: 20px solid #999999;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        top: 100%;
+        left: 50%;
+      }
+
+
+      .dropdown {
+        padding-top: 10px;
+        position: relative;
+        display: inline-block;
+      }
+      .dropbtn {
+        padding: 5px;
+        font-size: 18px;
+        border-radius: 2px;
+        border-width: 0px;
+      }
+      .dropdown-content{
+        align-items: left;
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0.0.0.0.2);
+        padding: 12px 16px;
+        z-index: 1;
+      }
+      .dropdown-item{
+        font-style: italic;
+        padding: 5px;
+        cursor: pointer;
+      }
+      .dropdown-item:hover {
+        background: #d3d3d3;
+        opacity: 0.7;
+      }
+      .dropdown:hover .dropdown-content{
+        display: block;
+      }
+      .dropdown:hover .dropdown {background-color: #3e8e41}
+
+    </style>
+  </head>
+  <h1 id="title-h1">Interactive Climate Change Map</h1>
+  <div id="intro-para">This is an interactive map of the projected effect of climate change on Britain derived from the UKCP 2018 data and models. Choose one of three greenhouse-gas emission scenarios - low, medium, and high, and see the projected sea levels and temperatures (and other data??) from 1990 to 2100. Use the slider to adjust the date.
+
+  </div>
+  <body id="map-container">
+    <div class="dropdown">
+        <button class="dropbtn">Emission Scenario</button>
+        <div class="dropdown-content">
+          <div class="dropdown-item" value="1" onclick="{toggle_emission_scenario(this)}"> Low </div>
+          <div class="dropdown-item" value="2" onclick="{toggle_emission_scenario(this)}"> Medium </div>
+          <div class="dropdown-item" value="3" onclick="{toggle_emission_scenario(this)}"> High </div>
+    </div>
+    </div>
+    <div class="dropdown">
+        <button class="dropbtn">Climate Variable</button>
+        <div class="dropdown-content">
+          <div class="dropdown-item" value="1" onclick="{toggle_data_type(this)}"> Sea Levels </div>
+          <div class="dropdown-item" value="2" onclick="{toggle_data_type(this)}"> Temperatures </div>
+      </div>
+    </div>
+    <body id="map-container">
+    <div id="map"></div>
+    <div id="slidecontainer">
+      <input type="range" min="1990" max="2100" value="1990" class="slider" id="myrange" step="1">
+      <output id="slider-output">1990</output>
+    </div>
+    <script>
+
+      var slider = document.getElementById("myrange");
+      var sliderOutput = document.getElementById("slider-output"); // not sure where demo is coming in here?
+      var valueDisplay = document.getElementById("value-display");
+      var current_date_range = "2024";
+      var currentVariable = 1;
+      //output.innerHTMl = slider.value;
+      slider.oninput =function() {
+        //output.innerHTMl = this.value;
+        console.log("In oninput function of slider!");
+        console.log(this.value);
+        sliderOutput.innerHTML = this.value;
+        console.log(sliderOutput.innerHTML);
+        currentTimeSelected = this.value - 1990;
+        parse_date_range(this.value);
+        console.log("after parse data range");
+        console.log(current_date_range);
+        // add the new data to the map - if this works it'll be an absolute miracle!
+        if (currentVariable === 1){
+          add_points(currentTimeSelected);
+        }
+        if (currentVariable === 2){
+          console.log("about to add points in current variable 2");
+          console.log(current_date_range);
+          add_points(current_date_range);
+        }
+        // it'll change each time, but it might work!
+      }
+
+      function parse_date_range(val){
+        console.log("in parse data range");
+        console.log(val);
+        if (val <= 2033) {
+          current_date_range = "2024";
+        }
+        if (val >= 2034 && val <= 2043) {
+          current_date_range = "2033";
+        }
+        if (val >= 2044 && val <= 2053) {
+          current_date_range = "2044";
+        }
+        if (val >= 2054 && val <= 2063) {
+          current_date_range = "2054";
+        }
+        if (val >= 2064 && val <= 2073) {
+          current_date_range = "2064";
+        }
+        if (val <= 2074 && val <= 2084) {
+          current_date_range = "2074";
+        }
+        if (val > 2084){
+          current_date_range = "2084";
+        }
+
+    }
+
+      function modifyOffset() {
+        var el, newPoint, newPlace, offset, siblings, k;
+        width    = this.offsetWidth;
+        newPoint = (this.value - this.getAttribute("min")) / (this.getAttribute("max") - this.getAttribute("min"));
+        offset   =0;
+        if (newPoint < 0) { newPlace = 0;  }
+        else if (newPoint > 1) { newPlace = width; }
+        else { newPlace = width * newPoint + offset; offset -= newPoint;}
+        siblings = this.parentNode.childNodes;
+        for (var i = 0; i < siblings.length; i++) {
+          sibling = siblings[i];
+          if (sibling.id == this.id) { k = true; }
+          if ((k == true) && (sibling.nodeName == "OUTPUT")) {
+            outputTag = sibling;
+          }
+        }
+        outputTag.style.left       = newPlace + "px";
+        outputTag.style.marginLeft = offset + "%";
+        outputTag.innerHTML        = this.value;
+      }
+
+function modifyInputs() {
+  var inputs = document.getElementsByTagName("input");
+  for (var i = 0; i < inputs.length; i++) {
+    if (inputs[i].getAttribute("type") == "range") {
+      inputs[i].onchange = modifyOffset;
+      
+      // the following taken from http://stackoverflow.com/questions/2856513/trigger-onchange-event-manually
+      if ("fireEvent" in inputs[i]) {
+          inputs[i].fireEvent("onchange");
+      } else {
+          var evt = document.createEvent("HTMLEvents");
+          evt.initEvent("change", false, true);
+          inputs[i].dispatchEvent(evt);
+      }
+    }
+  }
+}
+
+window.onload = modifyInputs;
+
+// [START script-body]
+      var em1_fname = "http://0.0.0.0:8000/sea_level_26_json_50th.json";
+      var em2_fname = "http://0.0.0.0:8000/sea_level_45_json_50th.json";
+      var em3_fname = "http://0.0.0.0:8000/sea_level_85_json_50th.json";
+
+      var temp1_fname="http://0.0.0.0:8000/json_pdf_26_data_json.json";
+      var temp2_fname="http://0.0.0.0:8000/json_pdf_45_data_json.json"
+      var temp3_fname="http://0.0.0.0:8000/json_pdf_85_data_json.json"
+
+      var map;
+      var json_holder;
+      var sea_level_holder;
+      var json_holder_em1;
+      var json_holder_em2;
+      var json_holder_em3;
+      var currentTimeSelected = 1990;
+      var temp_holder;
+      var json_temp_em1;
+      var json_temp_em2;
+      var json_temp_em3;
+
+
+      function loadJSON(fname,callback) {   
+        console.log("inside loadJSON");
+      var xobj = new XMLHttpRequest();
+      xobj.overrideMimeType("application/json");
+      xobj.open('GET', fname, true);
+      xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+          callback(JSON.parse(xobj.responseText));
+        }
+      };
+      xobj.send(null);  
+    }
+
+    function toggle_emission_scenario(e){
+      console.log(e);
+      var val = parseInt(e.getAttribute('value'))
+      if (val === 1){
+        console.log("switched to emission 1!");
+        sea_level_holder = json_holder_em1;
+        temp_holder = json_temp_em1;
+        add_points(currentTimeSelected);
+      }
+      if (val === 2){
+        console.log("switched to emission 2!");
+        sea_level_holder = json_holder_em2;
+        temp_holder = json_temp_em2;
+
+        add_points(currentTimeSelected);
+      }
+      if (val ===3) {
+        console.log("switched to emission 3!");
+        sea_level_holder = json_holder_em3;
+        add_points(currentTimeSelected);
+        temp_holder = json_temp_em3;
+      }
+    }
+
+    function toggle_data_type(e){
+      console.log(e);
+      var val = parseInt(e.getAttribute('value'))
+      if (val === 1){
+        console.log("switched to sea_levels!");
+        console.log(sea_level_holder);
+        console.log(currentTimeSelected);
+        json_holder = sea_level_holder;
+
+        add_points(currentTimeSelected - 1990);
+        currentVariable = 1;
+      }
+      if (val === 2) {
+        console.log("switched to temperatures");
+        json_holder = temp_holder;
+        console.log(json_holder);
+        currentVariable = 2;
+        add_points(current_date_range);
+        console.log(currentVariable);
+      }
+
+    }
+
+    function interpolateHsl(lowHsl, highHsl, fraction) {
+        var color = [];
+        for (var i = 0; i < 3; i++) {
+          // Calculate color based on the fraction.
+          color[i] = (highHsl[i] - lowHsl[i]) * fraction + lowHsl[i];
+        }
+
+        return 'hsl(' + color[0] + ',' + color[1] + '%,' + color[2] + '%)';
+      }
+
+      function simpleStyle(feature) {
+          var mag = Math.exp(parseFloat(feature.getProperty("val"))) * 5;
+          return {
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: mag,
+              fillColor: '#f00',
+              fillOpacity: 0.35,
+              strokeWeight: 0
+            }
+          };
+        }
+
+        function advancedStyle(feature) {
+          //.log("in style");
+          //console.log(currentVariable);
+          var low = [151,83,34];
+          var high = [5,69,54];
+          var minMag = 1.0;
+          var maxMag = 15.0;
+          var val = feature.getProperty('val') * 5;
+          if (currentVariable === 1){
+            val = val * 10;
+          }
+          if (currentVariable === 2){
+            //console.log("adjusting val!");
+            val = val *2;
+          }
+
+          // fraction represents where thevalue sits between min and max
+          var fraction = (Math.min(val, maxMag) - minMag) / (maxMag - minMag);
+          var color = interpolateHsl(low, high, fraction);
+
+          return {
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              strokeWeight: 0.5,
+              strokeColor: "#fff",
+              fillColor: color,
+              fillOpacity: 4/val,
+              scale: val /2
+            },
+            zIndex: Math.floor(val)
+          }
+        }
+        function initialize_sea_data() {
+        loadJSON(em1_fname,function(json,cb){
+            console.log("Json loaded!");
+            json_holder_em1 = json;
+            sea_level_holder = json_holder_em1;
+            console.log("set sea level holder");
+            console.log(sea_level_holder);
+            json_holder = sea_level_holder;
+            gpoints = JSONtoGeoJSONAtTimeT(0);
+            map.data.addGeoJson(gpoints);
+            console.log("setting style!");
+            map.data.setStyle(advancedStyle);
+            //console.log("about to call callback!");
+            //cb(); // call the next set of functions to load the rest!
+          });
+        }
+
+        function add_points(t) {
+          console.log("in add points");
+          console.log(t);
+          console.log(currentVariable);
+          points = JSONtoGeoJSONAtTimeT(t);
+          clear_data();
+          map.data.addGeoJson(points);
+          //map.data.setStyle(advancedStyle);
+        }
+
+        function clear_data() {
+          map.data.forEach(function(feature) {
+            map.data.remove(feature);
+          });
+        }
+
+        function load_additional_data(){
+           console.log("In initializing additional callback!");
+          // loads the rest of the data once the first thing is initialized...
+          // then all the emision scenario trigger will have to do is flip the json_holder!
+          loadJSON(em2_fname, function(json){
+            json_holder_em2 = json;
+          });
+          loadJSON(em3_fname, function(json){
+            json_holder_em3 = json;
+          });
+          loadJSON(temp1_fname, function(json){
+            console.log("temp1 loaded");
+            console.log(json)
+            json_temp_em1 = json;
+            console.log("setting temp holder!");
+            temp_holder = json_temp_em1;
+            console.log(temp_holder);
+          });
+          loadJSON(temp2_fname, function(json){
+            console.log("temp2 loaded");
+            console.log(json)
+            json_temp_em2 = json;
+          });
+          loadJSON(temp3_fname, function(json){
+            console.log("temp3 loaded");
+            console.log(json)
+            json_temp_em3 = json;
+          });
+        console.log("additional datas loaded!");
+        }
+
+
+      function initMap() {
+        console.log("Inside initMap")
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: { lat: 54.8218, lng: 1.5007 },
+          //center: { lat: 54.8218, lng: -12.5007 },
+          zoom: 7
+        });
+        // setup the map now load the data and do cool things!
+        initialize_sea_data();
+        load_additional_data();
+        
+ 
+      }
+
+
+      
+      function JSONtoGeoJSONAtTimeT(t){
+        console.log("In JSON to geo");
+        console.log(json_holder);
+        console.log(t);
+         pointsNow = json_holder[t]
+         console.log("Points now!");
+         console.log(pointsNow);
+         geoJSONPoints = []
+         var keys = Object.keys(pointsNow);
+         for (var i = 0; i < keys.length; i++){
+          k = keys[i]
+          o = pointsNow[k]
+          geoJSONPoints.push({
+            "geometry": {
+              "type": "Point",
+              "coordinates": [o.lng, o.lat]
+            },
+            "properties": {"val": o.val},
+            "type": "Feature"
+          });// this creates a GeoJSON comparible representation, I think of the points
+
+         }
+         geoJSONObject = {"type": "FeatureCollection", "metadata": {}, "features": geoJSONPoints};
+         console.log(geoJSONObject);
+         return geoJSONObject;
+    }
+
+    
+
+      
+// [END script-body]
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?&callback=initMap"></script> 
+  </body>
+</html>
